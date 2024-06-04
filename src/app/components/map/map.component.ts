@@ -1,5 +1,5 @@
-import { Component, OnInit, Inject } from '@angular/core';
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { GoogleMapsModule } from '@angular/google-maps';
 import { environment } from '../../../environments/environment';
 
@@ -36,10 +36,15 @@ export class MapComponent implements OnInit {
     }
   ];
 
-  constructor(@Inject(DOCUMENT) private document: Document) { }
+  constructor(
+    @Inject(DOCUMENT) private document: Document,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) { }
 
   ngOnInit(): void {
-    this.loadGoogleMapsApi();
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadGoogleMapsApi();
+    }
   }
 
   private loadGoogleMapsApi(): void {
@@ -63,7 +68,7 @@ export class MapComponent implements OnInit {
 
       // Agrega un listener para el cambio de zoom
       this.map.addListener('zoom_changed', () => {
-        this.polygonClicked();
+        this.onZoomChanged();
       });
 
       // Agrega los polígonos al mapa
@@ -71,7 +76,7 @@ export class MapComponent implements OnInit {
         const newPolygon = new google.maps.Polygon(polygonOptions);
         newPolygon.setMap(this.map);
         newPolygon.addListener('click', () => {
-          this.polygonClicked();
+          this.onPolygonClicked();
         });
       });
     } else {
@@ -79,7 +84,12 @@ export class MapComponent implements OnInit {
     }
   }
 
-  private polygonClicked(): void {
+  private onZoomChanged(): void {
+    console.log('Zoom changed!');
+    // Aquí puedes agregar cualquier lógica que necesites cuando el zoom cambia
+  }
+
+  private onPolygonClicked(): void {
     alert('Polygon clicked!');
   }
 }
