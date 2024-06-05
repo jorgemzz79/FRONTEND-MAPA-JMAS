@@ -20,19 +20,45 @@ export class MapComponent implements OnInit {
     zoom: 15
   };
 
-  polygons: google.maps.PolygonOptions[] = [
+  polygons: { id: number, options: google.maps.PolygonOptions }[] = [
     {
-      paths: [
-        { lat: 26.919232508572446, lng: -105.65187880137567 },
-        { lat: 26.919433401103497, lng: -105.65424987414661 },
-        { lat: 26.917044191765, lng: -105.6544966373846 },
-        { lat: 26.91684807823939, lng: -105.65214165786564 },
-      ],
-      strokeColor: '#FF0000',
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: '#FF0000',
-      fillOpacity: 0.35
+      id: 1,
+      options: {
+        paths: [
+          { lat: 26.919232508572446, lng: -105.65187880137567 },
+          { lat: 26.919433401103497, lng: -105.65424987414661 },
+          { lat: 26.917044191765, lng: -105.6544966373846 },
+          { lat: 26.91684807823939, lng: -105.65214165786564 },
+        ],
+        strokeColor: '#FF0000',
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: '#FF0000',
+        fillOpacity: 0.35
+      }
+    },
+    {
+      id: 2,
+      options: {
+        paths: [
+          { lat: 26.91961486025175, lng: -105.65189250372669 },
+          { lat: 26.922741204331913, lng: -105.65155122614748 },
+          { lat: 26.923361337233843, lng: -105.65330663012942 },
+          { lat: 26.922964900949918, lng: -105.65351468418862 },
+          { lat: 26.922917070925035, lng: -105.65337453876327 },
+          { lat: 26.922830976828596, lng: -105.65346372221502 },
+          { lat: 26.92246826273218, lng: -105.65367820240145 },
+          { lat: 26.92238396193005, lng: -105.65375866867417 },
+          { lat: 26.921595782957706, lng: -105.65429238452657 },
+          { lat: 26.921393902486503, lng: -105.65268718311074 },
+          { lat: 26.91968242375524, lng: -105.65280884049146 }
+        ],
+        strokeColor: '#00FF00', // Cambia el color de la línea si lo deseas
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: '#00FF00', // Cambia el color de relleno si lo deseas
+        fillOpacity: 0.35
+      }
     }
   ];
 
@@ -72,11 +98,11 @@ export class MapComponent implements OnInit {
       });
 
       // Agrega los polígonos al mapa
-      this.polygons.forEach((polygonOptions: google.maps.PolygonOptions) => {
-        const newPolygon = new google.maps.Polygon(polygonOptions);
+      this.polygons.forEach((polygonData) => {
+        const newPolygon = new google.maps.Polygon(polygonData.options);
         newPolygon.setMap(this.map);
         newPolygon.addListener('click', () => {
-          this.onPolygonClicked();
+          this.onPolygonClicked(polygonData.id);
         });
       });
     } else {
@@ -89,7 +115,7 @@ export class MapComponent implements OnInit {
     // Aquí puedes agregar cualquier lógica que necesites cuando el zoom cambia
   }
 
-  private onPolygonClicked(): void {
-    alert('Polygon clicked!');
+  private onPolygonClicked(id: number): void {
+    alert(`Polygon clicked with ID: ${id}`);
   }
 }
