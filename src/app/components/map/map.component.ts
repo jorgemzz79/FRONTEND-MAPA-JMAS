@@ -7,6 +7,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { PolygonService } from '../../services/polygon.service';
 import { Polygon } from '../../models/polygon';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-map',
@@ -88,6 +89,13 @@ export class MapComponent implements OnInit {
   }
 
   private onPolygonClicked(id: number): void {
-    alert(`Polygon clicked with ID: ${id}`);
+    //alert(`SELECCION EN POLIGONO ID: ${id}`);
+    Swal.fire({
+      position: "top-end",
+      icon: "success",
+      title: `SELECCION EN POLIGONO ID: ${id}`,
+      showConfirmButton: false,
+      timer: 1500
+    });
   }
 }

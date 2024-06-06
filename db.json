@@ -56,10 +56,10 @@
           { "lat": 26.92327437997792, "lng": -105.65136175576434 }
 
         ],
-        "strokeColor": "#00FF55",
+        "strokeColor": "#00F3FF",
         "strokeOpacity": 0.8,
         "strokeWeight": 2,
-        "fillColor": "#00FF55",
+        "fillColor": "#00F3FF",
         "fillOpacity": 0.35
       }
     }
