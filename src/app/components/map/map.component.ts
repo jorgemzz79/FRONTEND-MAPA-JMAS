@@ -1,6 +1,4 @@
-// src/app/map/map.component.ts
-
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID,NgZone } from '@angular/core';
 import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { GoogleMapsModule } from '@angular/google-maps';
 import { HttpClientModule } from '@angular/common/http';
@@ -8,11 +6,12 @@ import { environment } from '../../../environments/environment';
 import { PolygonService } from '../../services/polygon.service';
 import { Polygon } from '../../models/polygon';
 import Swal from 'sweetalert2';
+import { RouterModule, RouterOutlet, Router } from '@angular/router';
 
 @Component({
   selector: 'app-map',
   standalone: true,
-  imports: [CommonModule, GoogleMapsModule, HttpClientModule],
+  imports: [CommonModule, GoogleMapsModule, HttpClientModule, RouterOutlet, RouterModule],
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.css']
 })
@@ -30,7 +29,11 @@ export class MapComponent implements OnInit {
   constructor(
     @Inject(DOCUMENT) private document: Document,
     @Inject(PLATFORM_ID) private platformId: Object,
-    private polygonService: PolygonService
+    private polygonService: PolygonService,
+    private router: Router, // Inyectar el Router aquí,
+    private _ngZone: NgZone, private _router: Router,
+    private zone: NgZone
+
   ) { }
 
   ngOnInit(): void {
@@ -46,7 +49,6 @@ export class MapComponent implements OnInit {
     script.async = true;
     this.document.body.appendChild(script);
 
-    // Agrega una función de inicialización global
     (window as any)['initMap'] = () => {
       this.apiLoaded = true;
       this.initializeMap();
@@ -57,13 +59,9 @@ export class MapComponent implements OnInit {
     const mapElement = this.document.getElementById('map');
     if (mapElement) {
       this.map = new google.maps.Map(mapElement, this.mapOptions);
-
-      // Agrega un listener para el cambio de zoom
       this.map.addListener('zoom_changed', () => {
         this.onZoomChanged();
       });
-
-      // Cargar los polígonos desde el servicio
       this.polygonService.getPolygons().subscribe((data) => {
         this.polygons = data;
         this.addPolygonsToMap();
@@ -85,11 +83,12 @@ export class MapComponent implements OnInit {
 
   private onZoomChanged(): void {
     console.log('Zoom changed!');
-    // Aquí puedes agregar cualquier lógica que necesites cuando el zoom cambia
   }
 
   private onPolygonClicked(id: number): void {
-    //alert(`SELECCION EN POLIGONO ID: ${id}`);
+    this.zone.run(() => {
+      this.router.navigate(['/poligono-detalles',id]);
+  });
     Swal.fire({
       position: "top-end",
       icon: "success",

@@ -1,13 +1,14 @@
+// src/app/app.component.ts
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { MapComponent } from './components/map/map.component';
+
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, MapComponent],
+  imports: [CommonModule, RouterOutlet],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styleUrls: ['./app.component.css']
 })
 export class AppComponent {
   title = 'FRONTEND-MAPA-JMAS';
