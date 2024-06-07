@@ -9,6 +9,9 @@ import { Polygon } from '../../models/polygon';
 import Swal from 'sweetalert2';
 import { RouterModule, RouterOutlet, Router } from '@angular/router';
 import { PolygonDetalle } from '../../models/polygon-detalle';
+import { MarkerService } from '../../services/marker.service';
+import { Marker } from '../../models/marker';
+import MarkerClusterer from '@googlemaps/markerclustererplus';
 
 @Component({
   selector: 'app-poligono-detalles',
@@ -22,6 +25,7 @@ export class PoligonoDetallesComponent implements OnInit {
   apiLoaded: boolean = false;
   map!: google.maps.Map;
   selectedPolygon!: PolygonDetalle;
+  markers: Marker[] = [];
 
   mapOptions: google.maps.MapOptions = {
     center: { lat: 26.918187338222793, lng: -105.65337254005449 },
@@ -31,6 +35,7 @@ export class PoligonoDetallesComponent implements OnInit {
 
 
   constructor(
+    private markerService: MarkerService,
     @Inject(DOCUMENT) private document: Document,
     @Inject(PLATFORM_ID) private platformId: Object,
     private polygonDetalleService: PolygonDetalleService,
@@ -40,6 +45,7 @@ export class PoligonoDetallesComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.loadMarkers();
     this.route.params.subscribe(params => {
       this.polygonId = +params['id'];
       if (isPlatformBrowser(this.platformId)) {
@@ -76,7 +82,7 @@ export class PoligonoDetallesComponent implements OnInit {
     this.polygonDetalleService.getPolygonById(this.polygonId).subscribe((polygonData) => {
       this.selectedPolygon = polygonData;
       this.displayPolygonOnMap();
-      this.addMarkersToMap();
+     // this.addMarkersToMap();
     });
   }
 
@@ -94,12 +100,21 @@ export class PoligonoDetallesComponent implements OnInit {
     this.map.fitBounds(bounds);
   }
 
-  private addMarkersToMap(): void {
-    this.selectedPolygon.markers.forEach(markerData => {
-      new google.maps.Marker({
-        position: markerData,
-        map: this.map
-      });
+ 
+
+  private loadMarkers(): void {
+    this.markerService.getMarkers().subscribe({
+      next: (markers: Marker[]) => {
+        console.log('Marcadores recibidos del backend:', markers); // Imprimir los marcadores en la consola
+        this.markers = markers;
+    //    this.addMarkersToMap();
+      },
+      error: (error: any) => {
+        console.error('Error al cargar los marcadores:', error);
+      }
     });
   }
+  
+  
+
 }
