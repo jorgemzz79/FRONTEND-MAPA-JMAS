@@ -120,7 +120,7 @@ export class PoligonoDetallesComponent implements OnInit {
     // Ajusta el centro y el zoom del mapa para que incluya el polígono con un pequeño retraso
     console.log("SE EJECUTO AFUERA");
 
-    setTimeout(() => {
+    
       this.clearMap();  // Limpia el mapa de cualquier contenido previo
 
     const polygonOptions: google.maps.PolygonOptions = {
@@ -131,20 +131,8 @@ export class PoligonoDetallesComponent implements OnInit {
     this.currentPolygon = new google.maps.Polygon(polygonOptions);
     this.currentPolygon.setMap(this.map);
 
-    // Calcula el centro del polígono
-    const bounds = new google.maps.LatLngBounds();
-    console.log("=>");
-    this.obtenerPoligono();
-    //console.log("Vertices del polígono:", this.selectedPolygon.vertices);
-
-   // this.selectedPolygon.vertices.forEach(vertex => bounds.extend(vertex));
     
-   console.log(this.selectedPolygon.vertices);
-
-    const center = bounds.getCenter();
-      this.map.setCenter(center);
-      this.map.fitBounds(bounds);
-      
+      setTimeout(() => {
     }, 50); // Ajusta el tiempo de retraso si es necesario
   }
 
