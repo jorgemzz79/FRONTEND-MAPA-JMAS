@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, PLATFORM_ID,NgZone } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, NgZone, OnDestroy } from '@angular/core';
 import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { GoogleMapsModule } from '@angular/google-maps';
 import { HttpClientModule } from '@angular/common/http';
@@ -7,6 +7,7 @@ import { PolygonService } from '../../services/polygon.service';
 import { Polygon } from '../../models/polygon';
 import Swal from 'sweetalert2';
 import { RouterModule, RouterOutlet, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-map',
@@ -15,11 +16,12 @@ import { RouterModule, RouterOutlet, Router } from '@angular/router';
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.css']
 })
-export class MapComponent implements OnInit {
+export class MapComponent implements OnInit, OnDestroy {
 
   apiLoaded: boolean = false;
   map!: google.maps.Map;
   polygons: Polygon[] = [];
+  private mapSub: Subscription | undefined;
 
   mapOptions: google.maps.MapOptions = {
     center: { lat: 26.918187338222793, lng: -105.65337254005449 },
@@ -30,15 +32,21 @@ export class MapComponent implements OnInit {
     @Inject(DOCUMENT) private document: Document,
     @Inject(PLATFORM_ID) private platformId: Object,
     private polygonService: PolygonService,
-    private router: Router, // Inyectar el Router aquí,
+    private router: Router,
     private _ngZone: NgZone, private _router: Router,
     private zone: NgZone
-
   ) { }
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.loadGoogleMapsApi();
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Limpieza de suscripciones u otras tareas de limpieza aquí
+    if (this.mapSub) {
+      this.mapSub.unsubscribe();
     }
   }
 
@@ -62,7 +70,7 @@ export class MapComponent implements OnInit {
       this.map.addListener('zoom_changed', () => {
         this.onZoomChanged();
       });
-      this.polygonService.getPolygons().subscribe((data) => {
+      this.mapSub = this.polygonService.getPolygons().subscribe((data) => {
         this.polygons = data;
         this.addPolygonsToMap();
       });
@@ -87,8 +95,8 @@ export class MapComponent implements OnInit {
 
   private onPolygonClicked(id: number): void {
     this.zone.run(() => {
-      this.router.navigate(['/poligono-detalles',id]);
-  });
+      this.router.navigate(['/poligono-detalles', id]);
+    });
     Swal.fire({
       position: "top-end",
       icon: "success",
