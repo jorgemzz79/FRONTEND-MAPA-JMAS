@@ -97,6 +97,8 @@ export class PoligonoDetallesComponent implements OnInit {
   private loadPolygonDetails(): void {
     this.polygonDetalleService.getPolygonById(this.polygonId).subscribe((polygonData) => {
       this.selectedPolygon = polygonData;
+      console.log('Polygon Details:', this.selectedPolygon);
+
       this.displayPolygonOnMap();
     });
   }
@@ -115,26 +117,35 @@ export class PoligonoDetallesComponent implements OnInit {
   }
 
   private displayPolygonOnMap(): void {
-    
-
-    // Ajusta el centro y el zoom del mapa para que incluya el polígono con un pequeño retraso
     console.log("SE EJECUTO AFUERA");
-
-    
-      this.clearMap();  // Limpia el mapa de cualquier contenido previo
-
+    console.log('===========>:', this.selectedPolygon);
+  
+    this.clearMap();  // Limpia el mapa de cualquier contenido previo
+  
     const polygonOptions: google.maps.PolygonOptions = {
       paths: this.selectedPolygon.vertices,
       ...this.selectedPolygon.options
     };
-
+  
     this.currentPolygon = new google.maps.Polygon(polygonOptions);
     this.currentPolygon.setMap(this.map);
-
-    
-      setTimeout(() => {
+  
+    // Calcula el centroide del polígono
+    const centroid = this.calculateCentroid(this.selectedPolygon.vertices);
+  
+    // Ajusta el centro y el zoom del mapa para que incluya el polígono con un pequeño retraso
+    setTimeout(() => {
+      if (this.map && this.currentPolygon) {
+        this.map.setCenter(new google.maps.LatLng(centroid.lat, centroid.lng));
+        const bounds = new google.maps.LatLngBounds();
+        this.currentPolygon.getPath().forEach((vertex: google.maps.LatLng) => {
+          bounds.extend(vertex);
+        });
+        this.map.fitBounds(bounds);
+      }
     }, 50); // Ajusta el tiempo de retraso si es necesario
   }
+  
 
   private addMarkersToMap(): void {
     this.markers.forEach(marker => {
@@ -159,10 +170,49 @@ export class PoligonoDetallesComponent implements OnInit {
     console.log('Posición del marcador clicado:', position);
   }
 
-  private obtenerPoligono(): void {
-    this.polygonDetalleService.getPolygonById(this.polygonId).subscribe((polygonData) => {
-      this.selectedPolygon = polygonData;
-    });
+   calculateCentroid(paths: { lat: number; lng: number }[]): { lat: number; lng: number } {
+    if (!paths || paths.length === 0) {
+      return { lat: 0, lng: 0 }; // Si no hay puntos, devuelve el centro en el origen
+    }
+  
+    let centroid = { lat: 0, lng: 0 };
+    let signedArea = 0.0;
+    let x0 = 0.0; // Current vertex X
+    let y0 = 0.0; // Current vertex Y
+    let x1 = 0.0; // Next vertex X
+    let y1 = 0.0; // Next vertex Y
+    let a = 0.0;  // Partial signed area
+  
+    // For all vertices except last
+    for (let i = 0; i < paths.length - 1; ++i) {
+      x0 = paths[i].lng;
+      y0 = paths[i].lat;
+      x1 = paths[i + 1].lng;
+      y1 = paths[i + 1].lat;
+      a = x0 * y1 - x1 * y0;
+      signedArea += a;
+      centroid.lng += (x0 + x1) * a;
+      centroid.lat += (y0 + y1) * a;
+    }
+  
+    // Do last vertex separately to complete the loop
+    x0 = paths[paths.length - 1].lng;
+    y0 = paths[paths.length - 1].lat;
+    x1 = paths[0].lng;
+    y1 = paths[0].lat;
+    a = x0 * y1 - x1 * y0;
+    signedArea += a;
+    centroid.lng += (x0 + x1) * a;
+    centroid.lat += (y0 + y1) * a;
+  
+    signedArea *= 0.5;
+    centroid.lng /= (6.0 * signedArea);
+    centroid.lat /= (6.0 * signedArea);
+  
+    return centroid;
   }
+  
+  
+  
 
 }
