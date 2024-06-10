@@ -1,0 +1,9 @@
+.map-label {
+    position: absolute;
+    background-color: white;
+    border: 1px solid black;
+    padding: 2px;
+    white-space: nowrap;
+    pointer-events: none; /* Para que las etiquetas no bloqueen la interacción con el mapa */
+  }
+  

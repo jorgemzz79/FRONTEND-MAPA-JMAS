@@ -11,7 +11,6 @@ import { RouterModule, RouterOutlet, Router } from '@angular/router';
 import { PolygonDetalle } from '../../models/polygon-detalle';
 import { MarkerService } from '../../services/marker.service';
 import { Marker } from '../../models/marker';
-import MarkerClusterer from '@googlemaps/markerclustererplus';
 
 @Component({
   selector: 'app-poligono-detalles',
@@ -26,12 +25,11 @@ export class PoligonoDetallesComponent implements OnInit {
   apiLoaded: boolean = false;
   map!: google.maps.Map;
   currentPolygon?: google.maps.Polygon;
-
   selectedPolygon!: PolygonDetalle;
   markers: Marker[] = [];
 
   mapOptions: google.maps.MapOptions = {
-    center: { lat: 26.918187338222793, lng: -105.65337254005449 },
+    center: { lat: 26.92609486543298, lng: -105.736332352847 },
     zoom: 15,
   };
 
@@ -71,6 +69,7 @@ export class PoligonoDetallesComponent implements OnInit {
     const mapElement = this.document.getElementById('map');
     if (mapElement) {
       this.map = new google.maps.Map(mapElement, this.mapOptions);
+      this.map.addListener('zoom_changed', () => this.onZoomChange());
       this.loadPolygonDetails();
       this.loadMarkers();
     } else {
@@ -86,7 +85,7 @@ export class PoligonoDetallesComponent implements OnInit {
       marker.markers.forEach(position => {
         const markerObj = new google.maps.Marker({
           position: { lat: position.lat, lng: position.lng },
-          map: null,  // Desvincula el marcador del mapa
+          map: null,
           ...this.mapOptions
         });
         markerObj.setMap(null);
@@ -98,7 +97,6 @@ export class PoligonoDetallesComponent implements OnInit {
     this.polygonDetalleService.getPolygonById(this.polygonId).subscribe((polygonData) => {
       this.selectedPolygon = polygonData;
       console.log('Polygon Details:', this.selectedPolygon);
-
       this.displayPolygonOnMap();
     });
   }
@@ -106,9 +104,10 @@ export class PoligonoDetallesComponent implements OnInit {
   private loadMarkers(): void {
     this.markerService.getMarkers().subscribe({
       next: (markers: Marker[]) => {
-        console.log('Marcadores recibidos del backend:', markers); // Imprimir los marcadores en la consola
+        console.log('Marcadores recibidos del backend:', markers);
         this.markers = markers;
         this.addMarkersToMap();
+        this.addLabelsToMap();
       },
       error: (error: any) => {
         console.error('Error al cargar los marcadores:', error);
@@ -120,7 +119,7 @@ export class PoligonoDetallesComponent implements OnInit {
     console.log("SE EJECUTO AFUERA");
     console.log('===========>:', this.selectedPolygon);
   
-    this.clearMap();  // Limpia el mapa de cualquier contenido previo
+    this.clearMap();
   
     const polygonOptions: google.maps.PolygonOptions = {
       paths: this.selectedPolygon.vertices,
@@ -130,10 +129,8 @@ export class PoligonoDetallesComponent implements OnInit {
     this.currentPolygon = new google.maps.Polygon(polygonOptions);
     this.currentPolygon.setMap(this.map);
   
-    // Calcula el centroide del polígono
     const centroid = this.calculateCentroid(this.selectedPolygon.vertices);
   
-    // Ajusta el centro y el zoom del mapa para que incluya el polígono con un pequeño retraso
     setTimeout(() => {
       if (this.map && this.currentPolygon) {
         this.map.setCenter(new google.maps.LatLng(centroid.lat, centroid.lng));
@@ -143,9 +140,8 @@ export class PoligonoDetallesComponent implements OnInit {
         });
         this.map.fitBounds(bounds);
       }
-    }, 50); // Ajusta el tiempo de retraso si es necesario
+    }, 50);
   }
-  
 
   private addMarkersToMap(): void {
     this.markers.forEach(marker => {
@@ -163,27 +159,41 @@ export class PoligonoDetallesComponent implements OnInit {
     });
   }
 
-  
+  private addLabelsToMap(): void {
+    this.markers.forEach(marker => {
+      marker.markers.forEach(position => {
+        const label = new google.maps.InfoWindow({
+          content: marker.accountNumber,
+          position: { lat: position.lat, lng: position.lng },
+          disableAutoPan: true
+        });
+        label.open(this.map);
+      });
+    });
+  }
+
+  private onZoomChange(): void {
+    // No need to update the font size here since we're using InfoWindows
+  }
 
   private onMarkerClick(marker: Marker, position: { lat: number, lng: number }): void {
     console.log('Marcador clicado:', marker);
     console.log('Posición del marcador clicado:', position);
   }
 
-   calculateCentroid(paths: { lat: number; lng: number }[]): { lat: number; lng: number } {
+  calculateCentroid(paths: { lat: number; lng: number }[]): { lat: number; lng: number } {
     if (!paths || paths.length === 0) {
-      return { lat: 0, lng: 0 }; // Si no hay puntos, devuelve el centro en el origen
+      return { lat: 0, lng: 0 };
     }
   
     let centroid = { lat: 0, lng: 0 };
     let signedArea = 0.0;
-    let x0 = 0.0; // Current vertex X
-    let y0 = 0.0; // Current vertex Y
-    let x1 = 0.0; // Next vertex X
-    let y1 = 0.0; // Next vertex Y
-    let a = 0.0;  // Partial signed area
+    let x0 = 0.0;
+    let y0 = 0.0;
+    let x1 = 0.0;
+    let y1 = 0.0;
+    let a = 0.0;
   
-    // For all vertices except last
     for (let i = 0; i < paths.length - 1; ++i) {
       x0 = paths[i].lng;
       y0 = paths[i].lat;
@@ -195,7 +205,6 @@ export class PoligonoDetallesComponent implements OnInit {
       centroid.lat += (y0 + y1) * a;
     }
   
-    // Do last vertex separately to complete the loop
     x0 = paths[paths.length - 1].lng;
     y0 = paths[paths.length - 1].lat;
     x1 = paths[0].lng;
@@ -211,8 +220,4 @@ export class PoligonoDetallesComponent implements OnInit {
   
     return centroid;
   }
-  
-  
-  
-
 }
