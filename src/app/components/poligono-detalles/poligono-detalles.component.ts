@@ -11,6 +11,7 @@ import { RouterModule, RouterOutlet, Router } from '@angular/router';
 import { PolygonDetalle } from '../../models/polygon-detalle';
 import { MarkerService } from '../../services/marker.service';
 import { Marker } from '../../models/marker';
+import { map } from 'rxjs';
 
 @Component({
   selector: 'app-poligono-detalles',
@@ -72,6 +73,7 @@ export class PoligonoDetallesComponent implements OnInit {
       this.map.addListener('zoom_changed', () => this.onZoomChange());
       this.loadPolygonDetails();
       this.loadMarkers();
+      this.addCustomMarkersFromBackend(); // Añadir el marcador personalizado aquí
     } else {
       console.error("No se encontró el elemento del mapa en el DOM.");
     }
@@ -107,7 +109,6 @@ export class PoligonoDetallesComponent implements OnInit {
         console.log('Marcadores recibidos del backend:', markers);
         this.markers = markers;
         this.addMarkersToMap();
-        this.addLabelsToMap();
       },
       error: (error: any) => {
         console.error('Error al cargar los marcadores:', error);
@@ -159,24 +160,112 @@ export class PoligonoDetallesComponent implements OnInit {
     });
   }
 
-  private addLabelsToMap(): void {
-    this.markers.forEach(marker => {
-      marker.markers.forEach(position => {
-        const label = new google.maps.InfoWindow({
-          content: marker.accountNumber,
-          position: { lat: position.lat, lng: position.lng },
-          disableAutoPan: true
+
+private addCustomMarkersFromBackend(): void {
+  // Carga los marcadores desde el servicio y agrega los marcadores personalizados al mapa
+  this.markerService.getMarkers().subscribe({
+    next: (markers: Marker[]) => {
+      console.log('Marcadores recibidos del backend:', markers);
+      markers.forEach(marker => {
+        marker.markers.forEach(position => {
+          this.addCustomMarker(position.cuenta, position.lat, position.lng, marker);
         });
-        label.open(this.map);
       });
+    },
+    error: (error: any) => {
+      console.error('Error al cargar los marcadores:', error);
+    }
+  });
+}
+
+private addCustomMarker(texto: string, latitud: number, longitud: number, markerData: any): void {
+  const markerOverlay = new google.maps.OverlayView();
+
+  markerOverlay.onAdd = function() {
+    const div = document.createElement('div');
+    div.style.position = 'absolute';
+    div.style.color = 'black';
+    div.style.fontSize = '12px'; // Tamaño inicial del texto
+    div.style.fontWeight = 'bold';
+    div.style.cursor = 'pointer'; // Cambia el cursor para indicar que es clicable
+    div.innerHTML = texto;
+
+    // @ts-ignore: Ignorar el error de tipo para la propiedad div
+    this.div = div;
+
+    const panes = this.getPanes();
+    if (panes) {
+      panes.overlayLayer.appendChild(div);
+    }
+
+    // Agregar evento de clic al div
+    div.addEventListener('click', () => {
+      console.log('Marcador clicado:', markerData);
+      console.log('Posición del marcador clicado:', { lat: latitud, lng: longitud });
     });
-  }
+  };
+
+  markerOverlay.draw = function() {
+    const overlayProjection = this.getProjection();
+    const position = new google.maps.LatLng(latitud, longitud);
+    const pixelPosition = overlayProjection.fromLatLngToDivPixel(position);
+
+    // @ts-ignore: Ignorar el error de tipo para la propiedad div
+    const div = this.div;
+    if (pixelPosition && div) {
+      div.style.left = pixelPosition.x + 'px';
+      div.style.top = pixelPosition.y + 'px';
+
+      // Ajustar el tamaño del texto basado en el nivel de zoom
+      const map = this.getMap();
+      if (map instanceof google.maps.Map) {
+        const zoomLevel = map.getZoom();
+        if (zoomLevel !== undefined) {
+          let fontSize = '12px'; // Tamaño de texto por defecto
+          // Ajusta el tamaño del texto según el nivel de zoom
+          if (zoomLevel <= 8) {
+            fontSize = '1px';
+          } else if (zoomLevel >= 9 && zoomLevel <= 15) {
+            fontSize = '2px';
+          } else if (zoomLevel >= 16 && zoomLevel <= 18) {
+            fontSize = '4px';
+          } else if (zoomLevel >= 19 && zoomLevel <= 20) {
+            fontSize = '9px';
+          } else if (zoomLevel >= 21 && zoomLevel <= 22) {
+            fontSize = '20px';
+          } else {
+            fontSize = '12px';
+          }
+          div.style.fontSize = fontSize;
+        }
+      }
+    }
+  };
+
+  markerOverlay.onRemove = function() {
+    // @ts-ignore: Ignorar el error de tipo para la propiedad div
+    if (this.div && this.div.parentNode) {
+      // @ts-ignore: Ignorar el error de tipo para la propiedad div
+      this.div.parentNode.removeChild(this.div);
+      // @ts-ignore: Ignorar el error de tipo para la propiedad div
+      this.div = null;
+    }
+  };
+
+  markerOverlay.setMap(this.map);
+}
+
+  
+  
+  
+  
+  
 
   private onZoomChange(): void {
     // No need to update the font size here since we're using InfoWindows
   }
 
-  private onMarkerClick(marker: Marker, position: { lat: number, lng: number }): void {
+  private onMarkerClick(marker: any, position: { lat: number, lng: number }): void {
     console.log('Marcador clicado:', marker);
     console.log('Posición del marcador clicado:', position);
   }
@@ -221,3 +310,4 @@ export class PoligonoDetallesComponent implements OnInit {
     return centroid;
   }
 }
+

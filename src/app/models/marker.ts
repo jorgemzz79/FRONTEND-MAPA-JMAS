@@ -3,5 +3,5 @@
     id: number;
     name: string;
     accountNumber: string; // Añadir esta propiedad
-    markers: { lat: number, lng: number }[];
+    markers: { cuenta:string, lat: number, lng: number }[];
   }
